@@ -17,7 +17,7 @@ from composio_crewai import ComposioToolSet, Action, App
 
 # Discord Bot Setup
 intents = discord.Intents.default()
-bot = commands.Bot(command_prefix='!', intents=intents)
+bot = commands.Bot(command_prefix='?', intents=intents)
 
 #Tools
 composio_toolset = ComposioToolSet()
@@ -66,11 +66,93 @@ service = build('calendar', 'v3', credentials=creds)
 
 
 
-# Define a function to interact with Google Calendar using tools
+# Define a function to interact with Google Calendar using Google API
 async def perform_action(action, **kwargs):
-    task = Task(action=Action(name=action, params=kwargs))
-    result = Agent().execute(task)
-    return result
+    if action == 'list_events':
+        return await list_events(**kwargs)
+    elif action == 'create_event':
+        return await create_event(**kwargs)
+    elif action == 'delete_event':
+        return await delete_event(**kwargs)
+    elif action == 'update_event':
+        return await update_event(**kwargs)
+    elif action == 'get_event':
+        return await get_event(**kwargs)
+    elif action == 'list_calendars':
+        return await list_calendars(**kwargs)
+    else:
+        raise ValueError(f"Unsupported action: {action}")
+
+# Function to list upcoming events
+async def list_events(**kwargs):
+    calendar_id = kwargs.get('calendarId', 'primary')
+    time_min = kwargs.get('timeMin')
+    max_results = kwargs.get('maxResults', 10)
+    single_events = kwargs.get('singleEvents', True)
+    order_by = kwargs.get('orderBy', 'startTime')
+
+    events_result = service.events().list(
+        calendarId=calendar_id,
+        timeMin=time_min,
+        maxResults=max_results,
+        singleEvents=single_events,
+        orderBy=order_by
+    ).execute()
+
+    return events_result
+
+# Function to create a new event
+async def create_event(**kwargs):
+    calendar_id = kwargs.get('calendarId', 'primary')
+    body = kwargs.get('body')
+
+    event_result = service.events().insert(
+        calendarId=calendar_id,
+        body=body
+    ).execute()
+
+    return event_result
+
+# Function to delete an event
+async def delete_event(**kwargs):
+    calendar_id = kwargs.get('calendarId', 'primary')
+    event_id = kwargs.get('eventId')
+
+    await service.events().delete(
+        calendarId=calendar_id,
+        eventId=event_id
+    ).execute()
+
+# Function to update an event
+async def update_event(**kwargs):
+    calendar_id = kwargs.get('calendarId', 'primary')
+    event_id = kwargs.get('eventId')
+    body = kwargs.get('body')
+
+    updated_event = service.events().update(
+        calendarId=calendar_id,
+        eventId=event_id,
+        body=body
+    ).execute()
+
+    return updated_event
+
+# Function to get details of a specific event
+async def get_event(**kwargs):
+    calendar_id = kwargs.get('calendarId', 'primary')
+    event_id = kwargs.get('eventId')
+
+    event = service.events().get(
+        calendarId=calendar_id,
+        eventId=event_id
+    ).execute()
+
+    return event
+
+# Function to list all available calendars
+async def list_calendars(**kwargs):
+    calendars_result = service.calendarList().list().execute()
+    return calendars_result
 
 # List Events Command
 @bot.command(name='events')
@@ -92,7 +174,7 @@ async def get_events(ctx):
 
 # Create Event Command
 @bot.command(name='create_event')
-async def create_event(ctx, summary: str, start_time: str, end_time: str):
+async def create_event_command(ctx, summary: str, start_time: str, end_time: str):
     event = {
         'summary': summary,
         'start': {
@@ -110,7 +192,7 @@ async def create_event(ctx, summary: str, start_time: str, end_time: str):
 
 # Delete Event Command
 @bot.command(name='delete_event')
-async def delete_event(ctx, event_id: str):
+async def delete_event_command(ctx, event_id: str):
     try:
         await perform_action('delete_event', calendarId='primary', eventId=event_id)
         await ctx.send("Event deleted.")
@@ -119,7 +201,7 @@ async def delete_event(ctx, event_id: str):
 
 # Update Event Command
 @bot.command(name='update_event')
-async def update_event(ctx, event_id: str, summary: str = None, start_time: str = None, end_time: str = None):
+async def update_event_command(ctx, event_id: str, summary: str = None, start_time: str = None, end_time: str = None):
     try:
         event = await perform_action('get_event', calendarId='primary', eventId=event_id)
         
@@ -148,7 +230,7 @@ async def event_details(ctx, event_id: str):
 
 # List Calendars Command
 @bot.command(name='list_calendars')
-async def list_calendars(ctx):
+async def list_calendars_command(ctx):
     try:
         calendars_result = await perform_action('list_calendars')
         calendars = calendars_result.get('items', [])
@@ -165,8 +247,5 @@ async def list_calendars(ctx):
     except Exception as e:
         await ctx.send(f"An error occurred: {e}")
 
-
-
 # Run the bot
 bot.run('MTI1NDQ1MzYwNDY4MTc4MTI4MA.GAm3FE.Z-CfqrcReaDIQ2pPkqzHRVJ5m8dBIT9W4SMosQ')
-
