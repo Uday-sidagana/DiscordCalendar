@@ -1,5 +1,5 @@
 crewai
-longchain_google_genai
+langchain_google_genai
 
 
 composio_crewai
