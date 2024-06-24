@@ -14,6 +14,10 @@ from googleapiclient.discovery import build
 from crewai import Agent, Task
 from composio_crewai import ComposioToolSet, Action, App
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 # Discord Bot Setup
 intents = discord.Intents.default()
@@ -29,9 +33,8 @@ llm = ChatGoogleGenerativeAI(
     model="gemini-1.5-flash",
     verbose=True,
     temperature=0.5,
-    google_api_key="AIzaSyAo4qFsiKLRyRXE-tjYR6oHTTmCJ1dLgv4"
+    google_api_key=os.getenv("GOOGLE_API_KEY")
 )
-
 
 # Google Calendar Setup
 PORT_NUMBER = 8080
@@ -248,4 +251,4 @@ async def list_calendars_command(ctx):
         await ctx.send(f"An error occurred: {e}")
 
 # Run the bot
-bot.run('MTI1NDQ1MzYwNDY4MTc4MTI4MA.GAm3FE.Z-CfqrcReaDIQ2pPkqzHRVJ5m8dBIT9W4SMosQ')
+bot.run(os.getenv('DISCORD_BOT_TOKEN'))
