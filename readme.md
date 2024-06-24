@@ -45,4 +45,5 @@ composio apps
 ## Contribution
 
 You can add more Commands to the bot.
+Please work on a different branch until it is approved or send me a message.
 
